@@ -1,0 +1,34 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "Moviereview": {
+            "additionalProperties": false,
+            "properties": {
+                "id": {
+                    "type": "number"
+                },
+                "review_date": {
+                    "type": "string"
+                },
+                "review_desc": {
+                    "type": "string"
+                },
+                "review_rate": {
+                    "type": "number"
+                },
+                "reviewer_name": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "id",
+                "review_date",
+                "review_desc",
+                "review_rate",
+                "reviewer_name"
+            ],
+            "type": "object"
+        }
+    }
+}
+
