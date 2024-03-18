@@ -1,7 +1,12 @@
 import { APIGatewayProxyHandlerV2 } from "aws-lambda"; 
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  QueryCommand,
+  QueryCommandInput,
+} from "@aws-sdk/lib-dynamodb";
+
 
 const ddbDocClient = createDDbDocClient();
 
@@ -11,6 +16,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => { // 
     console.log("Event: ", event);
     const parameters  = event?.pathParameters;
     const movieId = parameters?.movieId ? parseInt(parameters.movieId) : undefined;
+    const queryParams = event.queryStringParameters;
+    const minRating = queryParams?.minRating ? parseInt(queryParams.minRating) : undefined;
 
     if (!movieId) {
       return {
@@ -22,35 +29,54 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => { // 
       };
     }
 
+    let commandInput: QueryCommandInput = {
+      TableName: process.env.TABLE_NAME,
+    };
+
+    if (minRating !== undefined) {
+      commandInput = {
+        ...commandInput,
+        KeyConditionExpression: "MovieId = :m",
+        FilterExpression: "Rating >= :r",
+        ExpressionAttributeValues: {
+          ":m": movieId,
+          ":r": minRating,
+        },
+      };
+    }
+    else {
+      commandInput = {
+        ...commandInput,
+        KeyConditionExpression: "MovieId = :m ",
+        ExpressionAttributeValues: {
+          ":m": movieId,
+        },
+      };
+    }
     const commandOutput = await ddbDocClient.send(
-      new GetCommand({
-        TableName: process.env.TABLE_NAME,
-        Key: { id: movieId },
-      })
+      new QueryCommand(commandInput)
     );
 
-    console.log("GetCommand response: ", commandOutput);
-    if (!commandOutput.Item) {
+
+    // Return Response
+    if (!commandOutput.Items || commandOutput.Items.length === 0) {
       return {
         statusCode: 404,
         headers: {
           "content-type": "application/json",
         },
-        body: JSON.stringify({ Message: "Invalid movie Id" }),
+        body: JSON.stringify({ Message: "For the specified MovieId, no movie reviews were found." }),
       };
     }
-    const body = {
-      data: commandOutput.Item,
-    };
-
-    // Return Response
     return {
       statusCode: 200,
       headers: {
         "content-type": "application/json",
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ data: commandOutput.Items }),
     };
+
+
   } catch (error: any) {
     console.log(JSON.stringify(error));
     return {
