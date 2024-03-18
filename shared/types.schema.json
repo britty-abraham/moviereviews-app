@@ -4,28 +4,28 @@
         "Moviereview": {
             "additionalProperties": false,
             "properties": {
-                "id": {
-                    "type": "number"
-                },
-                "review_date": {
+                "Content": {
                     "type": "string"
                 },
-                "review_desc": {
-                    "type": "string"
-                },
-                "review_rate": {
+                "MovieId": {
                     "type": "number"
                 },
-                "reviewer_name": {
+                "Rating": {
+                    "type": "number"
+                },
+                "ReviewDate": {
+                    "type": "string"
+                },
+                "ReviewerName": {
                     "type": "string"
                 }
             },
             "required": [
-                "id",
-                "review_date",
-                "review_desc",
-                "review_rate",
-                "reviewer_name"
+                "Content",
+                "MovieId",
+                "Rating",
+                "ReviewDate",
+                "ReviewerName"
             ],
             "type": "object"
         }
