@@ -40,7 +40,7 @@ export class MoviereviewsAppStack extends cdk.Stack {
     });
 
     // Functions
-     const newReviewFn = new lambdanode.NodejsFunction(this, "AddReviewFn", {
+    const newReviewFn = new lambdanode.NodejsFunction(this, "AddReviewFn", {
       architecture: lambda.Architecture.ARM_64,
       runtime: lambda.Runtime.NODEJS_16_X,
       entry: `${__dirname}/../lambdas/addReview.ts`,
@@ -66,12 +66,12 @@ export class MoviereviewsAppStack extends cdk.Stack {
           REGION: 'eu-west-1',
         },
       }
-      );
+    );
 
-      const getAllReviewsByIdBynameoryearFn = new lambdanode.NodejsFunction(
-        this,
-        "GetAllReviewsByIdBynameoryearFn",
-        {
+    const getAllReviewsByIdBynameoryearFn = new lambdanode.NodejsFunction(
+      this,
+      "GetAllReviewsByIdBynameoryearFn",
+      {
           architecture: lambda.Architecture.ARM_64,
           runtime: lambda.Runtime.NODEJS_18_X,
           entry: `${__dirname}/../lambdas/getAllReviewsByIdBynameoryear.ts`,
@@ -81,8 +81,24 @@ export class MoviereviewsAppStack extends cdk.Stack {
             TABLE_NAME: moviereviewsTable.tableName,
             REGION: 'eu-west-1',
           },
-        }
-        );
+      }
+    );
+
+    const updateReviewFn = new lambdanode.NodejsFunction(
+      this,
+      "UpdateReviewFn",
+      {
+          architecture: lambda.Architecture.ARM_64,
+          runtime: lambda.Runtime.NODEJS_18_X,
+          entry: `${__dirname}/../lambdas/updateReview.ts`,
+          timeout: cdk.Duration.seconds(10),
+          memorySize: 128,
+          environment: {
+            TABLE_NAME: moviereviewsTable.tableName,
+            REGION: 'eu-west-1',
+          },
+      }
+    );
 
     const api = new apig.RestApi(this, "RestAPI", {
       description: "MovieReview api",
@@ -117,11 +133,16 @@ export class MoviereviewsAppStack extends cdk.Stack {
       "GET",
       new apig.LambdaIntegration(getAllReviewsByIdBynameoryearFn, { proxy: true })
     );
+    reviewsnameoryearEndpoint.addMethod(
+      "PUT",
+      new apig.LambdaIntegration(updateReviewFn, { proxy: true })
+    );
     
 
     moviereviewsTable.grantReadWriteData(newReviewFn);
     moviereviewsTable.grantReadData(getAllReviewsByIdFn);
     moviereviewsTable.grantReadData(getAllReviewsByIdBynameoryearFn);
+    moviereviewsTable.grantReadWriteData(updateReviewFn);
    
 
   }
