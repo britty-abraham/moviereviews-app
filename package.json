@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.93",
+    "@types/jwk-to-pem": "^2.0.3",
     "@types/node": "20.4.2",
     "aws-cdk": "2.88.0",
     "esbuild": "^0.18.17",

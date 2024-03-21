@@ -5,8 +5,8 @@ import {
     APIGatewayProxyEvent,
   } from "aws-lambda";
   
-  import axios from "axios";
-  import jwt from 'jsonwebtoken';
+  import axios from "axios"
+  import jwt from 'jsonwebtoken'
   import jwkToPem from "jwk-to-pem";
   
   export type CookieMap = { [key: string]: string } | undefined;
