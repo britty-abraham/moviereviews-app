@@ -8,6 +8,7 @@ import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as custom from "aws-cdk-lib/custom-resources";
 import { generateBatch } from "../shared/util";
 import { movieReviews } from "../seed/moviereviews";
+import * as iam from 'aws-cdk-lib/aws-iam';
 
 type AppApiProps = {
   userPoolId: string;
@@ -156,15 +157,41 @@ export class AppApi extends Construct {
         }
       );
 
+      const getTranslatedReviewFn = new lambdanode.NodejsFunction(
+        this,
+        "GetTranslatedReviewFn",
+        {
+            architecture: lambda.Architecture.ARM_64,
+            runtime: lambda.Runtime.NODEJS_18_X,
+            entry: `${__dirname}/../lambdas/translateReview.ts`,
+            timeout: cdk.Duration.seconds(10),
+            memorySize: 128,
+            environment: {
+              TABLE_NAME: moviereviewsTable.tableName,
+              USER_POOL_ID: props.userPoolId,
+              CLIENT_ID: props.userPoolClientId,
+              REGION: 'eu-west-1',
+            },
+        }
+      );
+
+    // Add IAM policy statement to allow TranslateText action
+    const translatePolicyStatement = new iam.PolicyStatement({
+        actions: ['translate:TranslateText'],
+        resources: ['*'], // You may restrict the resource if needed
+    });
+    getTranslatedReviewFn.addToRolePolicy(translatePolicyStatement);
+
       const moviesEndpoint = appApi.root.addResource("movies");
       const addreviewsEndpoint = moviesEndpoint.addResource("reviews");
   
       const movieEndpoint = moviesEndpoint.addResource("{movieId}");
       const reviewsByMovieIdEndpoint = movieEndpoint.addResource("reviews");
       const reviewsnameoryearEndpoint = reviewsByMovieIdEndpoint.addResource("{yearorname}");
-      const updatereviewEndpoint = reviewsByMovieIdEndpoint.addResource("{ReviewerName}");
       const reviewsEndpoint = appApi.root.addResource("reviews");
       const byreviewernameEndpoint = reviewsEndpoint.addResource("{ReviewerName}");
+      const reviewernameidEndpoint = byreviewernameEndpoint.addResource("{movieId}");
+      const translateReviewEndpoint = reviewernameidEndpoint.addResource("translation");
 
 
     const authorizerFn = new lambdanode.NodejsFunction(this, "AuthorizerFn", {
@@ -199,7 +226,7 @@ export class AppApi extends Construct {
         "GET",
         new apig.LambdaIntegration(getAllReviewsByIdBynameoryearFn, { proxy: true })
     );
-    updatereviewEndpoint.addMethod(
+    reviewsnameoryearEndpoint.addMethod(
         "PUT",
         new apig.LambdaIntegration(updateReviewFn, { proxy: true }),
         {
@@ -211,11 +238,16 @@ export class AppApi extends Construct {
         "GET",
         new apig.LambdaIntegration(getAllReviewsByNameFn, { proxy: true })
     );
+    translateReviewEndpoint.addMethod(
+        "GET",
+        new apig.LambdaIntegration(getTranslatedReviewFn, { proxy: true })
+    );
   
     moviereviewsTable.grantReadWriteData(newReviewFn);
     moviereviewsTable.grantReadData(getAllReviewsByIdFn);
     moviereviewsTable.grantReadData(getAllReviewsByIdBynameoryearFn);
     moviereviewsTable.grantReadWriteData(updateReviewFn);
     moviereviewsTable.grantReadData(getAllReviewsByNameFn);
+    moviereviewsTable.grantReadData(getTranslatedReviewFn);
   }
 }
