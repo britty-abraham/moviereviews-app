@@ -16,7 +16,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
         const body = event.body ? JSON.parse(event.body) : undefined;
         const parameters  = event?.pathParameters;
         const MovieId = parameters?.movieId ? parseInt(parameters.movieId) : undefined;
-        const ReviewerName = parameters?.ReviewerName ? parameters.ReviewerName : undefined;  console.log("ReviewerName: ", ReviewerName);
+        const ReviewerName = parameters?.yearorname ? parameters.yearorname : undefined;  console.log("ReviewerName: ", ReviewerName);
         if (!body) {
             return {
                 statusCode: 400,
